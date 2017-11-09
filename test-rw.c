@@ -35,7 +35,7 @@ struct encoding {
 { AU_ENCTYPE_PCM | AU_ENCODING_FLOAT    | AU_ORDER_LE   | 32, "pcm-f32le" },
 { AU_ENCTYPE_PCM | AU_ENCODING_FLOAT    | AU_ORDER_BE   | 32, "pcm-f32be" }
 };
-#define NUMENCODING (sizeof(encodings) / sizeof(struct encoding))
+#define NUMENCODING ((int)(sizeof(encodings) / sizeof(struct encoding)))
 
 void
 usage()
@@ -65,7 +65,7 @@ genwave(ssize_t wlen, float **wave, int freq, int rate)
  * FIXME: test the < 32 formats for "enough" precision"
  * FIXME: have a separate test-precision.c for this? */
 int
-testrw(struct encoding *e, const float* wave, const size_t wlen, const int rate)
+testrw(struct encoding *e, const float* wave, const ssize_t wlen, const int rate)
 {
 	char name[FILENAME_MAX];
 	AUINFO *info = NULL;
