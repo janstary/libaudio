@@ -1,0 +1,33 @@
+read an write _frames_ (as opposed to samples)
+
+manpage:
+	document au_info()
+
+au_info:
+	display num of samples/frames too
+	(usualy this will go into the header)
+
+pcm:
+	increment file->frames and file->samples when writing
+	int to float: (*samples++ * 1.0) / INT8_MAX) can be below then -1
+	float to int: *samples++ = RFLE(p) * INT8_MAX will never be -1
+		So we differ between >0 and <0, but is it worth it?
+		libsndfile doesn't care
+	support 24 bit
+
+test suite
+	see what libsndfile/tests does, pcm* in particular
+	all conversions, in both directions, watch the diffs
+
+more encodings:
+	log PCM: alaw, mulaw
+	FLAC, OPUS, Ogg Vorbis
+
+audio.h declares everything
+	cleanly split the public interface and the private parts
+	and declare only the public stuff in audio.h
+
+large file support?
+	what does libsndfile do on 32 bit systems?
+
+support tags?

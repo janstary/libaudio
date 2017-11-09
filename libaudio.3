@@ -1,0 +1,299 @@
+.Dd April 3, 2017
+.Dt LIBAUDIO 3
+.Os
+.Sh NAME
+.Nm audio
+.Nd manipulate digital audio formats and files
+.Sh SYNOPSIS
+.In audio.h
+.Ft AUFILE *
+.Fn au_open "const char * path" "AUMODE mode" "AUINFO * info"
+.Ft int
+.Fn au_close "AUFILE * file"
+.Ft ssize_t
+.Fn au_read_s8 "AUFILE * file" "int8_t * samples" "size_t len"
+.Ft ssize_t
+.Fn au_read_u8 "AUFILE * file" "uint8_t * samples" "size_t len"
+.Ft ssize_t
+.Fn au_read_s16 "AUFILE * file" "int16_t * samples" "size_t len"
+.Ft ssize_t
+.Fn au_read_u16 "AUFILE * file" "uint16_t * samples" "size_t len"
+.Ft ssize_t
+.Fn au_read_s32 "AUFILE * file" "int32_t * samples" "size_t len"
+.Ft ssize_t
+.Fn au_read_u32 "AUFILE * file" "uint32_t * samples" "size_t len"
+.Ft ssize_t
+.Fn au_read_f32 "AUFILE * file" "float * samples" "size_t len"
+.Ft ssize_t
+.Fn au_write_s8 "AUFILE * file" "const int8_t * samples" "size_t len"
+.Ft ssize_t
+.Fn au_write_u8 "AUFILE * file" "const u_int8_t * samples" "size_t len"
+.Ft ssize_t
+.Fn au_write_s16 "AUFILE * file" "const int16_t * samples" "size_t len"
+.Ft ssize_t
+.Fn au_write_u16 "AUFILE * file" "const uint16_t * samples" "size_t len"
+.Ft ssize_t
+.Fn au_write_s32 "AUFILE * file" "const int32_t * samples" "size_t len"
+.Ft ssize_t
+.Fn au_write_u32 "AUFILE * file" "const uint32_t * samples" "size_t len"
+.Ft ssize_t
+.Fn au_write_f32 "AUFILE * file" "const float * samples" "size_t len"
+.Sh DESCRIPTION
+.Nm
+provides a simple uniform interface to manipulating
+digital audio data in various formats and file types.
+Each of the formats supported by
+.Nm
+can be described with the following parameters.
+.Bl -tag -width ""
+.It Sample rate
+The frequency of the sampled data.
+Commonly used sample rates range from 8 kHz used in telephony
+to 44100 Hz used with audio CDs,
+to 48 kHz supported by most audio hardware,
+to 96 kHz or even 192 kHz used by professional audio interfaces.
+As
+.Nm
+itself does not play or resample the signal,
+the sample rate is only recognized so that it can be written
+into various headers for players to see.
+.It Number of channels
+The number of audio channels the audio data contains.
+Most common values are 1 (mono), 2 (stereo), and 5+1 (surround).
+With multi-channel data,
+.Nm
+always assumes that the samples are interleaved:
+for e.g. stereo data, this means that a left-channel sample
+is followed by a right-channel sample, left sample, right sample, etc.
+The tuple of samples, one for each channel, is referred to as a frame.
+.It Sample encoding
+How exactly is the sampled value represented.
+.Nm
+only supports linear PCM
+using either signed or unsigned integers of various sizes,
+or using floats.
+See below for a complete description.
+.It Sample size
+The number of bits used to store each sample.
+Common sizes are 8 or 16 bits for consumer audio
+and 24 or 32 bits for professional recordings.
+In
+.Nm ,
+the possible bitsizes are 8, 16, and 32,
+using 1, 2 and 4 bytes per sample, respectively.
+.El
+.Pp
+Every encoding supported by
+.Nm
+is described with an unsigned 32bit integer
+obtained by xoring four bytes, representing
+encoding type (only linear PCM is supported),
+sample encoding (signed, unsigned, or float),
+byte order (none, little-endian or big-endian)
+and bitsize (8, 16 or 32).
+The following values are defined in the
+.In audio.h
+include file.
+.Bd -literal
+#define AU_ENCTYPE_MASK		0xff000000
+#define AU_ENCODING_MASK	0x00ff0000
+#define AU_ORDER_MASK		0x0000ff00
+#define AU_BITSIZE_MASK		0x000000ff
+
+#define AU_ENCTYPE_UNKNOWN	0x00000000
+#define AU_ENCTYPE_PCM		0x01000000
+
+#define AU_ENCODING_UNKNOWN	0x00000000
+#define AU_ENCODING_SIGNED	0x00010000
+#define AU_ENCODING_UNSIGNED	0x00020000
+#define AU_ENCODING_FLOAT	0x00030000
+
+#define AU_ORDER_NONE		0x00000000
+#define AU_ORDER_LE		0x00000100
+#define AU_ORDER_BE		0x00000200
+.Ed
+.Pp
+The only resctriction is that float samples must be 32 bits wide;
+all other combinations are possible.
+For example, this is a description of
+linear PCM with signed 16 bit integers using little-endian byte order:
+.Pp
+.Dl AU_ENCTYPE_PCM | AU_ENCODING_SIGNED | AU_ORDER_LE | 16
+.Pp
+It is important to distinguish between an
+.Em audio data format ,
+as described above, and the
+.Em container file type
+of the file containing the data, such as
+.Dq wav .
+An audio file of a given type can contain data in various audio formats,
+and data of a given audio format can be stored in files of various types.
+On the other hand, every given file type
+only supports a few formats.
+The file types recognized by
+.Nm
+are:
+.Pp
+.Bl -tag -compact -width AU_FILETYPE_UNKNOWN
+.It AU_FILETYPE_UNKNOWN
+A file of unknown type.
+.It AU_FILETYPE_RAW
+A headerless file containing just the audio data.
+.El
+.Pp
+The
+.Ft AUINFO
+structure serves to communicate audio parameters
+between the caller and the library.
+It is defined as follows:
+.Bd -literal
+typedef struct info {
+	AUFILETYPE	filetype;
+	uint16_t	srate;
+	uint32_t	encoding;
+	uint8_t		channels;
+	uint32_t	frames;
+	uint32_t	samples;
+	double		seconds;
+} AUINFO;
+.Ed
+.Pp
+When reading a file (see below), the library fills
+.Ft AUINFO
+with parameters stored in the file's header.
+When writing a file (see below),
+the user fills
+.Ft AUINFO
+with the desired parameters and passes that to the library.
+.\" FIXME zato AUFILE je soukromy.
+.Pp
+.Fn au_open
+opens the file named
+.Fa path
+for either reading or writing, according to
+.Fa mode ,
+which is either
+.Dv AU_READ
+or
+.Dv AU_WRITE .
+A special path of
+.Sq -
+is recognized as a name of the standard input when reading,
+or the standard output when writing.
+The file's type can either be guessed from the filename suffix, such as
+.Dq wav ,
+or is passed in the
+.Fa info
+structure.
+.Pp
+When opening a file of known type for reading,
+the file's header is parsed and the rest of
+.Fa info
+is filled accordingly, except for values already present in
+.Fa info ,
+which override those found in the header.
+When opening a
+.Dq raw
+file for reading, or when opening a file for writing,
+.Fa info
+needs to be filled with audio parameters, specifying the file's format.
+When writing, these are saved into the file's audio header.
+.Pp
+.Fn au_open
+returns a pointer to an
+.Ft AUFILE .
+This is a structure private to the library.
+The caller just passes the pointer as a file handle
+to the reading and writing functions.
+.Pp
+.Fn au_close
+attempts to close the open
+.Fa file .
+.Pp
+The reading functions read audio samples from the file,
+and the writing functions write audio samples into the file.
+The main feature is that the samples are retrieved/written
+in an appropriate format, as indicated in the function's name
+and detailed below.
+For example,
+.Fn au_read_u8
+reads the samples from
+.Fa file
+into
+.Fa samples
+as unsigned chars, whatever the format of the file is, and
+.Fn au_write_s16
+writes the given signed short
+.Fa samples
+into
+.Fa file
+in the file's format, whatever it happens to be.
+The library performs the conversions on the fly,
+transparently to the user.
+.Pp
+The functions
+.Fn au_read_s8 ,
+.Fn au_read_u8 ,
+.Fn au_read_s16 ,
+.Fn au_read_u16 ,
+.Fn au_read_s32 ,
+.Fn au_read_u32
+and
+.Fn au_read_f32
+attempt to read
+.Fa len
+samples from
+.Fa file
+and save them in
+.Fa samples
+converted into
+8bit signed chars,
+8bit unsigned chars,
+16bit signed shorts,
+16bit unsigned shorts,
+32bit signed integers,
+32bit unsigned integers
+or
+32bit floats.
+.Pp
+The functions
+.Fn au_write_s8 ,
+.Fn au_write_u8 ,
+.Fn au_write_s16 ,
+.Fn au_write_u16 ,
+.Fn au_write_s32 ,
+.Fn au_write_u32
+and
+.Fn au_write_f32
+attempt to write
+.Fa len
+.Fa samples ,
+given as
+8bit signed chars,
+8bit unsigned chars,
+16bit signed shorts,
+16bit unsigned shorts,
+32bit signed ints,
+32bit unsigned ints,
+or
+32bit floats
+into
+.Fa file ,
+using the file's audio format.
+.Sh RETURN VALUES
+.Fn au_open
+returns a pointer to an initialized
+.Vt AUFILE
+structure, or
+.Dv NULL
+if an error occurs.
+.Fn au_close
+returns 0 upon successfully closing the file,
+or -1 if an error occurs.
+The reading and writing functions return the number of samples
+read from the file or written to the file, respectively.
+This can be less than the number requested, if reading near the end of file.
+When reading, a return value of 0 means there are no more samples to read.
+A return value of -1 means an error occured.
+.Sh AUTHORS
+.An Jan Stary Aq Mt hans@stare.cz
