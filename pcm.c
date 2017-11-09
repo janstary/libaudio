@@ -10,8 +10,8 @@
 /* These are the linear PCM reading and writing functions.
  * The names follow a "pcm_{read,write}_src_as_dst" pattern:
  * samples in the src format are read/written in the dst format,
- * e.g. pcm_read_16le_as_u8() reads little-endian shorts as unsigned chars,
- * and pcm_write_s8_as_32be() writes signed chars as big-endian ints.
+ * e.g. pcm_read_s16le_as_u8() reads signed LE shorts as unsigned chars,
+ * and pcm_write_s8_as_s32be() writes signed chars as signed BE ints.
  * Note that the byte order of the machine running this is irrelevant;
  * samples are always stored in memory in the native byte order.
  * The r/w functions return the number of samples read/written, or -1. */
