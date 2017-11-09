@@ -38,8 +38,8 @@ install: $(LIBS) $(HDRS) $(MAN3) lint
 	install $(MAN3) $(MANDIR)
 
 test: $(TEST)
-	./test-file	> test-file.log 2>&1
-	./test-rw	> test-rw.log   2>&1
+	./test-file     2> /dev/null
+	./test-rw -l 5  2> /dev/null
 
 test-file: test-file.c $(LIBS) $(HDRS)
 	$(CC) $(CFLAGS) -o test-file test-file.c libaudio.a
@@ -54,4 +54,4 @@ uninstall:
 
 clean:
 	rm -f $(LIBS) $(OBJS) $(TEST)
-	rm -f *.raw *.log *.core *~
+	rm -f *.raw *.core *~

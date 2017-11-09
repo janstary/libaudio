@@ -53,12 +53,57 @@ genwave(ssize_t wlen, float **wave, int freq, int rate)
 		(*wave)[i] = sin(2 * M_PI * fmod(freq * t, 1.0));
 }
 
+/* Write the given float sound wave into the given file.
+ * Return number of samples written, or -1 on error. */
+ssize_t
+auwrite(const char* name, AUINFO* info, const float* samples, const ssize_t len)
+{
+	ssize_t w;
+	AUFILE *file = NULL;
+	if ((file = au_open(name, AU_WRITE, info)) == NULL) {
+		warnx("Cannot open %s for writing", name);
+		return -1;
+	}
+	if ((w = au_write_f32(file, samples, len)) == -1) {
+		warnx("Cannot write to %s", name);
+		return -1;
+	} else if (w < len) {
+		warnx("Only wrote %zd < %zd samples", w, len);
+		return -1;
+	}
+	if (au_close(file))
+		return -1;
+	return w;
+}
+
+/* Read the a sound wave from a given file as floats.
+ * Return number of samples read, or -1 on error. */
+ssize_t
+auread(const char* name, AUINFO* info, float* samples, ssize_t len)
+{
+	ssize_t r;
+	AUFILE *file = NULL;
+	if ((file = au_open(name, AU_READ, info)) == NULL) {
+		warnx("Cannot open %s for reading", name);
+		return -1;
+	}
+	if ((r = au_read_f32(file, samples, len)) == -1) {
+		warnx("Cannot read from %s", name);
+		return -1;
+	} else if (r < len) {
+		warnx("Only read %zd < %zd samples", r, len);
+		return -1;
+	}
+	if (au_close(file))
+		return -1;
+	return r;
+}
+
 int
-testrw(struct encoding *e, const float* wave, const ssize_t wlen, const int rate)
+testrw(struct encoding *e, const float* wave, const ssize_t len, const int rate)
 {
 	char name[FILENAME_MAX];
 	AUINFO *info = NULL;
-	AUFILE *file = NULL;
 	ssize_t i, r, w;
 	float *rbuf;
 	float *diff;
@@ -72,38 +117,20 @@ testrw(struct encoding *e, const float* wave, const ssize_t wlen, const int rate
 	info->srate    = rate;
 	info->encoding = e->encoding;
 
-	/* Write the wave into a file. */
+	/* Write the float wave using the given encoding. */
 	snprintf(name, FILENAME_MAX, "%s.raw", e->name);
-	if ((file = au_open(name, AU_WRITE, info)) == NULL) {
-		warnx("Cannot open %s for writing", name);
+	if ((w = auwrite(name, info, wave, len)) == -1) {
+		warnx("Error writing wave to %s", name);
 		return 1;
 	}
-	if ((w = au_write_f32(file, wave, wlen)) == -1) {
-		warnx("Cannot write to %s", name);
-		return 1;
-	} else if (w < wlen) {
-		warnx("Only wrote %zd < %zd samples", w, wlen);
-		return 1;
-	}
-	if (au_close(file))
-		return 1;
 
-	/* Read the raw samples back. */
-	if ((rbuf = calloc(wlen, sizeof(float))) == NULL)
+	/* Read the samples back as floats again. */
+	if ((rbuf = calloc(len, sizeof(float))) == NULL)
 		err(1, NULL);
-	if ((file = au_open(name, AU_READ, info)) == NULL) {
-		warnx("Cannot open %s for reading", name);
+	if ((r = auread(name, info, rbuf, w)) == -1) {
+		warnx("Error reading back from %s", name);
 		return 1;
 	}
-	if ((r = au_read_f32(file, rbuf, wlen)) == -1) {
-		warnx("Cannot read from to %s", name);
-		return 1;
-	} else if (r < wlen) {
-		warnx("Only read %zd < %zd samples", r, w);
-		return 1;
-	}
-	if (au_close(file))
-		return 1;
 
 	/* For a format with < 32 bits, there will be a loss of precision;
 	 * but any 32 bit format should reconstruct the sample precisely. */
@@ -112,23 +139,16 @@ testrw(struct encoding *e, const float* wave, const ssize_t wlen, const int rate
 	for (i = 0; i < r; i++)
 		diff[i] = wave[i] - rbuf[i];
 
-	/* Write the audio diff file, in floats. */
+	/* Write the audio diff file, using floats. */
 	snprintf(name, FILENAME_MAX, "diff-%s.raw", e->name);
 	info->encoding = AU_ENCTYPE_PCM | AU_ENCODING_FLOAT | AU_ORDER_LE | 32;
-	if ((file = au_open(name, AU_WRITE, info)) == NULL) {
-		warnx("Cannot open %s for writing", name);
+	if ((w = auwrite(name, info, diff, r)) == -1) {
+		warnx("Error writing diff to %s", name);
 		return 1;
 	}
-	if ((w = au_write_f32(file, diff, r)) == -1) {
-		warnx("Cannot write to %s", name);
-		return 1;
-	} else if (w < r) {
-		warnx("Only wrote %zd < %zd samples", w, r);
-		return 1;
-	}
-	if (au_close(file))
-		return 1;
 
+	free(rbuf);
+	free(diff);
 	return 0;
 }
 
