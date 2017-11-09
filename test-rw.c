@@ -53,16 +53,6 @@ genwave(ssize_t wlen, float **wave, int freq, int rate)
 		(*wave)[i] = sin(2 * M_PI * fmod(freq * t, 1.0));
 }
 
-/* A sound wave is given as an array of floats.
- * Write it into a file of the given encoding, read it back,
- * and check that the samples are (reasonably) equal.
- * For a format with less than 32 bits, there will be a loss of precision.
- * For example, writing the f32 sample as s16le and reading the s16le back
- * as a float will not be the same float. On the other hand, any 32bit format
- * should reconstruct the sample precisely. */
-/* FIXME: do it for < 32 formats too if -v is given
- * FIXME: test the < 32 formats for "enough" precision"
- * FIXME: have a separate test-precision.c for this? */
 int
 testrw(struct encoding *e, const float* wave, const ssize_t wlen, const int rate)
 {
@@ -122,8 +112,9 @@ testrw(struct encoding *e, const float* wave, const ssize_t wlen, const int rate
 	for (i = 0; i < r; i++)
 		diff[i] = wave[i] - rbuf[i];
 
-	/* Write the audio diff file. */
-	snprintf(name, FILENAME_MAX, "%s-diff.raw", e->name);
+	/* Write the audio diff file, in floats. */
+	snprintf(name, FILENAME_MAX, "diff-%s.raw", e->name);
+	info->encoding = AU_ENCTYPE_PCM | AU_ENCODING_FLOAT | AU_ORDER_LE | 32;
 	if ((file = au_open(name, AU_WRITE, info)) == NULL) {
 		warnx("Cannot open %s for writing", name);
 		return 1;
@@ -144,9 +135,9 @@ testrw(struct encoding *e, const float* wave, const ssize_t wlen, const int rate
 int
 main(int argc, char** argv)
 {
-	int rate = 48000;
-	int freq = 237;
-	int wlen = 1;
+	int rate = 48000;	/* in Hertz   */
+	int freq = 237;		/* in Hertz   */
+	int wlen = 1;		/* in seconds */
 	float *wave;
 	int i, c;
 
