@@ -7,7 +7,7 @@
 #define NAME "test-file.raw"
 
 int
-main(int argc, char** argv)
+main(void)
 {
 	AUINFO info;
 	AUFILE *file = NULL;
