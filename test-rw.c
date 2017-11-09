@@ -1,13 +1,12 @@
 /* Test elementary reading and writing that libaudio does:
- * 1. Generate a sine wave of given freq, rate, wlen.
- * 2. Write the raw samples into a file.
- * 3. Read the raw samples back.
- * 4. Check that they are the same, byte by byte.
+ * 1. Generate a sine wave of given frequency, rate and length.
+ * 2. Write the raw samples into a file and read them back.
+ * 4. Write an audio file containing the difference.
  * 5. Repeat for every encoding we support.
  * 6. Return 0 iff there was no error.
  *
  * FIXME beware the sin() of a large argument (fmod?)
- * FIXME multichanel
+ * FIXME multichanel? Or should that be tested separately?
  */
 
 #include <stdlib.h>
@@ -72,6 +71,7 @@ testrw(struct encoding *e, const float* wave, const ssize_t wlen, const int rate
 	AUFILE *file = NULL;
 	ssize_t i, r, w;
 	float *rbuf;
+	float *diff;
 
 	if (e == NULL)
 		return 1;
@@ -82,13 +82,12 @@ testrw(struct encoding *e, const float* wave, const ssize_t wlen, const int rate
 	info->srate    = rate;
 	info->encoding = e->encoding;
 
+	/* Write the wave into a file. */
 	snprintf(name, FILENAME_MAX, "%s.raw", e->name);
 	if ((file = au_open(name, AU_WRITE, info)) == NULL) {
 		warnx("Cannot open %s for writing", name);
 		return 1;
 	}
-	/*au_info(file);*/
-
 	if ((w = au_write_f32(file, wave, wlen)) == -1) {
 		warnx("Cannot write to %s", name);
 		return 1;
@@ -96,8 +95,10 @@ testrw(struct encoding *e, const float* wave, const ssize_t wlen, const int rate
 		warnx("Only wrote %zd < %zd samples", w, wlen);
 		return 1;
 	}
-	au_close(file);
+	if (au_close(file))
+		return 1;
 
+	/* Read the raw samples back. */
 	if ((rbuf = calloc(wlen, sizeof(float))) == NULL)
 		err(1, NULL);
 	if ((file = au_open(name, AU_READ, info)) == NULL) {
@@ -111,14 +112,31 @@ testrw(struct encoding *e, const float* wave, const ssize_t wlen, const int rate
 		warnx("Only read %zd < %zd samples", r, w);
 		return 1;
 	}
-	au_close(file);
+	if (au_close(file))
+		return 1;
 
-	printf("%s\n", name);
-	for (i = 0; i < r; i++) {
-		printf("%9zd % 10.8f % 10.8f\n", i, wave[i], rbuf[i]);
-		/* FIXME: For 32 bit formats, test that the sample is the same.
-		 * For < 32 bit formats, test that it is reasonably close. */
+	/* For a format with < 32 bits, there will be a loss of precision;
+	 * but any 32 bit format should reconstruct the sample precisely. */
+	if ((diff = calloc(r, sizeof(float))) == NULL)
+		err(1, NULL);
+	for (i = 0; i < r; i++)
+		diff[i] = wave[i] - rbuf[i];
+
+	/* Write the audio diff file. */
+	snprintf(name, FILENAME_MAX, "%s-diff.raw", e->name);
+	if ((file = au_open(name, AU_WRITE, info)) == NULL) {
+		warnx("Cannot open %s for writing", name);
+		return 1;
 	}
+	if ((w = au_write_f32(file, diff, r)) == -1) {
+		warnx("Cannot write to %s", name);
+		return 1;
+	} else if (w < r) {
+		warnx("Only wrote %zd < %zd samples", w, r);
+		return 1;
+	}
+	if (au_close(file))
+		return 1;
 
 	return 0;
 }
@@ -126,8 +144,8 @@ testrw(struct encoding *e, const float* wave, const ssize_t wlen, const int rate
 int
 main(int argc, char** argv)
 {
-	int rate = 4000;
-	int freq = 213;
+	int rate = 48000;
+	int freq = 237;
 	int wlen = 1;
 	float *wave;
 	int i, c;

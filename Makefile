@@ -40,7 +40,6 @@ install: $(LIBS) $(HDRS) $(MAN3) lint
 test: $(TEST)
 	./test-file	> test-file.log 2>&1
 	./test-rw	> test-rw.log   2>&1
-	./test-rw-plot	  test-rw.log   2>&1
 
 test-file: test-file.c $(LIBS) $(HDRS)
 	$(CC) $(CFLAGS) -o test-file test-file.c libaudio.a
@@ -54,5 +53,5 @@ uninstall:
 	cd $(MANDIR) && rm -f $(MAN3)
 
 clean:
-	rm -f *.raw *.log *.png *.diff *.core *~
 	rm -f $(LIBS) $(OBJS) $(TEST)
+	rm -f *.raw *.log *.core *~
