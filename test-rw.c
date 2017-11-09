@@ -1,7 +1,7 @@
 /* Test elementary reading and writing that libaudio does:
  * 1. Generate a sine wave of given frequency, rate and length.
  * 2. Write the raw samples into a file and read them back.
- * 4. Write an audio file containing the difference.
+ * 4. Create an audio file containing the difference.
  * 5. Repeat for every encoding we support.
  * 6. Return 0 iff there was no error.
  *
@@ -19,7 +19,7 @@
 
 struct encoding {
 	uint32_t	encoding;
-	char		name[256];
+	char		name[32];
 } encodings[] = {
 { AU_ENCTYPE_PCM | AU_ENCODING_SIGNED   | AU_ORDER_NONE |  8, "pcm-s08"   },
 { AU_ENCTYPE_PCM | AU_ENCODING_UNSIGNED | AU_ORDER_NONE |  8, "pcm-u08"   },
@@ -50,7 +50,7 @@ genwave(ssize_t wlen, float **wave, int freq, int rate)
 	if ((*wave = calloc(wlen, sizeof(float))) == NULL)
 		err(1, NULL);
 	for (i = 0; i < wlen; t = ++i * delta)
-		(*wave)[i] = sin(2 * M_PI * fmod(freq * t, 1.0));
+		(*wave)[i] = .5 * M_SQRT2 * sin(2 * M_PI * fmod(freq * t, 1.0));
 }
 
 /* Write the given float sound wave into the given file.
