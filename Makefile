@@ -58,7 +58,7 @@ play: $(TEST)
 
 diff: $(TEST)
 	./test-rw -l 2
-	play `printf "-c 1 -r 48000 -e float -b 32 %s " diff*.raw`
+	play `printf -- "-c 1 -r 48000 -e float -b 32 %s " diff*.raw`
 
 test-file: test-file.c $(LIBS) $(HDRS)
 	$(CC) $(CFLAGS) -o test-file test-file.c libaudio.a
