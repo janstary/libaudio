@@ -38,8 +38,27 @@ install: $(LIBS) $(HDRS) $(MAN3) lint
 	install $(MAN3) $(MANDIR)
 
 test: $(TEST)
-	./test-file     2> /dev/null
-	./test-rw -l 5  2> /dev/null
+	./test-file 2> /dev/null
+	./test-rw   2> /dev/null
+
+play: $(TEST)
+	./test-rw -l 2
+	play -c 1 -r 48000 -e float    -b 32 -L pcm-f32le.raw
+	play -c 1 -r 48000 -e float    -b 32 -B pcm-f32be.raw
+	play -c 1 -r 48000 -e signed   -b 32 -L pcm-s32le.raw
+	play -c 1 -r 48000 -e signed   -b 32 -B pcm-s32be.raw
+	play -c 1 -r 48000 -e signed   -b 16 -L pcm-s16le.raw
+	play -c 1 -r 48000 -e signed   -b 16 -B pcm-s16be.raw
+	play -c 1 -r 48000 -e signed   -b  8    pcm-s08.raw
+	play -c 1 -r 48000 -e unsigned -b 32 -L pcm-u32le.raw
+	play -c 1 -r 48000 -e unsigned -b 32 -B pcm-u32be.raw
+	play -c 1 -r 48000 -e unsigned -b 16 -L pcm-u16le.raw
+	play -c 1 -r 48000 -e unsigned -b 16 -B pcm-u16be.raw
+	play -c 1 -r 48000 -e unsigned -b  8    pcm-u08.raw
+
+diff: $(TEST)
+	./test-rw -l 2
+	play `printf "-c 1 -r 48000 -e float -b 32 %s " diff*.raw`
 
 test-file: test-file.c $(LIBS) $(HDRS)
 	$(CC) $(CFLAGS) -o test-file test-file.c libaudio.a
