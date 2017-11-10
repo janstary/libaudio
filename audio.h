@@ -5,7 +5,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-
 typedef enum {
 #define NUMTYPES 3
 	AU_FILETYPE_UNKNOWN	= 0x0000,
@@ -21,7 +20,7 @@ typedef enum {
 /* The encoding is completely described in four bytes, specifying
  * the encoding type, the sample encoding, byteorder, and bitsize;
  * e.g. PCM, signed integers, little endian, 16 bits.
- * The first three are #defined as constants,
+ * The first three are #defined constants,
  * the bitsize is just a number itself. */
 
 #define AU_ENCTYPE_MASK		0xff000000
