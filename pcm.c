@@ -19,13 +19,15 @@
 #define BUFSIZE  (32 * 1024)
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 
+
+/* Multibyte integer reading and writing routines.
+ * The extra variable * makes it possible to use e.g. W16LE(p, *samples++)
+ * without having 'samples' incremented more than once. */
+
 #define R16LE(p) ( (p[0] << 0) | (p[1] << 8) )
 #define R16BE(p) ( (p[1] << 0) | (p[0] << 8) )
 #define R32LE(p) ( (p[0] << 0) | (p[1] << 8) | (p[2] << 16) | (p[3] << 24) )
 #define R32BE(p) ( (p[3] << 0) | (p[2] << 8) | (p[1] << 16) | (p[0] << 24) )
-
-/* The extra variable makes it possible to use e.g. W16LE(p, *samples++)
- * without having 'samples' incremented more than once. */
 
 #define W16LE(p,s) {		\
 	uint16_t _s = s;	\
@@ -55,54 +57,32 @@
 	p[3] = ((_s) >>  0);	\
 }
 
-#define RFLE(p)    ( * ((float *) (p))      )
-#define WFLE(p, s) { * ((float *) (p)) = s; }
+/* Float reading and writing routines. */
 
-/*
+typedef union {
+	uint32_t u;
+	float f;
+} ufloat;
+
 static inline float
 RFLE(unsigned char* p)
 {
-	float f;
-	unsigned char* _f = (unsigned char*) &f;
-	_f[0] = p[0];
-	_f[1] = p[1];
-	_f[2] = p[2];
-	_f[3] = p[3];
-	return f;
+	ufloat uf;
+	uf.u = (uint32_t)R32LE(p);
+	return uf.f;
 }
-
-static inline void
-WFLE(unsigned char* p, float s)
-{
-	unsigned char* _s = (unsigned char*) &s;
-	p[0] = _s[0];
-	p[1] = _s[1];
-	p[2] = _s[2];
-	p[3] = _s[3];
-}
-*/
 
 static inline float
 RFBE(unsigned char* p)
 {
-	float f;
-	unsigned char* _f = (unsigned char*) &f;
-	_f[0] = p[3];
-	_f[1] = p[2];
-	_f[2] = p[1];
-	_f[3] = p[0];
-	return f;
+	ufloat uf;
+	uf.u = (uint32_t)R32BE(p);
+	return uf.f;
 }
 
-static inline void
-WFBE(unsigned char* p, float s)
-{
-	unsigned char* _s = (unsigned char*) &s;
-	p[0] = _s[3];
-	p[1] = _s[2];
-	p[2] = _s[1];
-	p[3] = _s[0];
-}
+#define WFLE(p,s) { ufloat uf; uf.f = s; W32LE(p, uf.u); }
+#define WFBE(p,s) { ufloat uf; uf.f = s; W32BE(p, uf.u); }
+
 
 /* int8_t */
 
