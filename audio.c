@@ -93,10 +93,10 @@ au_open(const char* path, AUMODE mode, AUINFO* info)
 		err(1, NULL);
 	if (strcmp(path, "-") == 0) {
 		if (mode == AU_READ) {
-			printf("Reading stdin\n");
+			fprintf(stderr, "Reading stdin\n");
 			file->fd = STDIN_FILENO;
 		} else if (mode == AU_WRITE) {
-			printf("Writing stdout\n");
+			fprintf(stderr, "Writing stdout\n");
 			file->fd = STDOUT_FILENO;
 		}
 	} else {
