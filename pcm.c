@@ -21,7 +21,7 @@
 
 
 /* Multibyte integer reading and writing routines.
- * The extra variable * makes it possible to use e.g. W16LE(p, *samples++)
+ * The extra variable makes it possible to use e.g. W16LE(p, *samples++)
  * without having 'samples' incremented more than once. */
 
 #define R16LE(p) ( (p[0] << 0) | (p[1] << 8) )
