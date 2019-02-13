@@ -1,3 +1,5 @@
+au_check(info)
+
 read an write _frames_ (as opposed to samples)
 
 manpage:
