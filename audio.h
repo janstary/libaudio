@@ -56,6 +56,9 @@ typedef struct aufile {
 	AUMODE		mode;
 	AUINFO		*info;
 
+	int		(*au_read_hdr) (int, AUINFO*);
+	int		(*au_write_hdr)(int, AUINFO*);
+
 	ssize_t		(*au_read_s8)  (int,         int8_t*, size_t);
 	ssize_t		(*au_read_u8)  (int,        uint8_t*, size_t);
 	ssize_t		(*au_read_s16) (int,        int16_t*, size_t);

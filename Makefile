@@ -8,7 +8,7 @@ MANDIR	= $(PREFIX)/man/man3
 
 HDRS	= audio.h
 LIBS	= libaudio.a libaudio.so
-OBJS	= audio.o pcm.o
+OBJS	= audio.o pcm.o wav.o
 MAN3	= libaudio.3
 TEST	= test-file test-rw
 
@@ -25,6 +25,9 @@ audio.o: $(HDRS) audio.c pcm.h
 
 pcm.o: $(HDRS) pcm.c pcm.h
 	$(CC) $(CFLAGS) -c pcm.c
+
+wav.o: $(HDRS) wav.c wav.h
+	$(CC) $(CFLAGS) -c wav.c
 
 lint: $(MAN3)
 	mandoc -Tlint -Wstyle $(MAN3)
