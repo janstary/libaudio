@@ -4,8 +4,8 @@
 #include "audio.h"
 #include "wav.h"
 
-/* Read a WAV header from an open file and fill AUINFO accordigly.
- * This is only done during au_open() so we don't week there and back.
+/* Read a WAV header from an open file and fill AUINFO accordingly.
+ * This is only done during au_open() so we don't seek there and back.
  * Return 0 for success, -1 on error. */
 int
 wav_read_hdr(int fd, AUINFO* info)
@@ -18,8 +18,8 @@ wav_read_hdr(int fd, AUINFO* info)
 	return 0;
 }
 
-/* Write a WAV header at the start of an open file, according to AUINFO.
- * We seek there and back, so tat subsequent samples are writen correctly.
+/* Write a WAV header at the start of an open file as per AUINFO.
+ * Seek there and back, so that subsequent samples are written correctly.
  * Return 0 for success, -1 on error. */
 int
 wav_write_hdr(int fd, AUINFO* info)
@@ -48,7 +48,6 @@ wav_init(AUFILE *file)
 		warnx("Will not intitialize non WAV file as WAV");
 		return -1;
 	}
-
 	file->au_read_hdr = wav_read_hdr;
 	file->au_write_hdr = wav_write_hdr;
 	return 0;

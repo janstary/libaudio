@@ -76,7 +76,7 @@ auwrite(const char* name, AUINFO* info, const float* samples, const ssize_t len)
 	return w;
 }
 
-/* Read the a sound wave from a given file as floats.
+/* Read a sound wave from a given file as floats.
  * Return number of samples read, or -1 on error. */
 ssize_t
 auread(const char* name, AUINFO* info, float* samples, ssize_t len)
